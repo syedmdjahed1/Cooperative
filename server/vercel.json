@@ -1,0 +1,6 @@
+{
+  "version": 2,
+  "installCommand": "npm install",
+  "buildCommand": "echo skip",
+  "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
+}
