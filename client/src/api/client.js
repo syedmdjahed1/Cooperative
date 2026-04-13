@@ -12,11 +12,6 @@ if (typeof localStorage !== 'undefined') {
   api.defaults.headers.common['X-Samity-Code'] = code;
 }
 
-export function setAuthToken(token) {
-  if (token) api.defaults.headers.common.Authorization = `Bearer ${token}`;
-  else delete api.defaults.headers.common.Authorization;
-}
-
 export function setSamityCode(code) {
   if (code) api.defaults.headers.common['X-Samity-Code'] = code;
   else delete api.defaults.headers.common['X-Samity-Code'];

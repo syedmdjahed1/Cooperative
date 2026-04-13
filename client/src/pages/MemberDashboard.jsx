@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 
 export function MemberDashboard() {
+  const [members, setMembers] = useState([]);
+  const [memberId, setMemberId] = useState('');
   const [data, setData] = useState(null);
   const [err, setErr] = useState('');
   const [depForm, setDepForm] = useState({
@@ -12,46 +14,85 @@ export function MemberDashboard() {
   });
 
   useEffect(() => {
-    let c = false;
+    let cancelled = false;
     (async () => {
       try {
-        const { data: d } = await api.get('/members/me/summary');
-        if (!c) setData(d);
+        const { data: d } = await api.get('/members');
+        if (cancelled) return;
+        const list = d.members || [];
+        setMembers(list);
+        setMemberId((prev) => prev || list[0]?._id || '');
       } catch (e) {
-        if (!c) setErr(e.response?.data?.message || 'Failed to load');
+        if (!cancelled) setErr(e.response?.data?.message || 'Failed to load members');
       }
     })();
     return () => {
-      c = true;
+      cancelled = true;
     };
   }, []);
 
+  useEffect(() => {
+    if (!memberId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: d } = await api.get('/members/me/summary', { params: { memberId } });
+        if (!cancelled) {
+          setData(d);
+          setErr('');
+        }
+      } catch (e) {
+        if (!cancelled) setErr(e.response?.data?.message || 'Failed to load');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [memberId]);
+
   const submitDeposit = async (e) => {
     e.preventDefault();
+    if (!data?.member?._id) return;
     await api.post('/deposits', {
+      memberId: data.member._id,
       amount: Number(depForm.amount),
       month: depForm.month,
       paymentMethod: depForm.paymentMethod,
       note: depForm.note,
     });
     setDepForm({ amount: '', month: depForm.month, paymentMethod: depForm.paymentMethod, note: '' });
-    const { data: d } = await api.get('/members/me/summary');
+    const { data: d } = await api.get('/members/me/summary', { params: { memberId: data.member._id } });
     setData(d);
   };
 
-  if (err) return <div className="text-red-600">{err}</div>;
+  if (err && !data && !members.length) return <div className="text-red-600">{err}</div>;
+  if (!memberId && members.length === 0) return <div className="text-slate-500">No members yet.</div>;
   if (!data) return <div className="text-slate-500">Loading…</div>;
 
   const { member, totalDeposited, profitLoss, currentBalance, dueAdvance, recentDeposits } = data;
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <h1 className="text-2xl font-semibold text-slate-800">Welcome, {member.name}</h1>
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="text-2xl font-semibold text-slate-800">Member preview</h1>
+        <select
+          className="border border-slate-200 rounded-lg px-3 py-2 text-sm"
+          value={memberId}
+          onChange={(e) => setMemberId(e.target.value)}
+        >
+          {members.map((m) => (
+            <option key={m._id} value={m._id}>
+              {m.memberNumber} — {m.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <h2 className="text-lg text-slate-700">Welcome, {member.name}</h2>
       <form
         onSubmit={submitDeposit}
         className="bg-white rounded-xl border border-slate-200 p-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm"
       >
-        <h2 className="sm:col-span-2 lg:col-span-4 font-semibold">Submit installment</h2>
+        <h3 className="sm:col-span-2 lg:col-span-4 font-semibold">Submit installment</h3>
         <input
           type="number"
           step="0.01"

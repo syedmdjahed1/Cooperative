@@ -1,8 +1,6 @@
 import { Router } from 'express';
-import bcrypt from 'bcryptjs';
 import { body, param, query, validationResult } from 'express-validator';
 import { Member } from '../models/Member.js';
-import { User } from '../models/User.js';
 import { Share } from '../models/Share.js';
 import { Deposit } from '../models/Deposit.js';
 import { authenticate, requireRoles } from '../middleware/auth.js';
@@ -19,13 +17,24 @@ const router = Router();
 
 router.use(authenticate);
 
-router.get(
-  '/me/summary',
-  requireRoles('member'),
-  async (req, res) => {
-    if (!req.user.memberId) return res.status(400).json({ message: 'No member profile' });
+router.get('/me/summary', async (req, res) => {
+    let targetId = req.user.memberId;
+    if (!targetId) {
+      if (req.query.memberId) targetId = req.query.memberId;
+      else {
+        const first = await Member.findOne({
+          samityCode: req.samityCode,
+          status: 'active',
+        })
+          .sort({ createdAt: 1 })
+          .select('_id')
+          .lean();
+        if (!first) return res.status(404).json({ message: 'No members yet' });
+        targetId = first._id.toString();
+      }
+    }
     const member = await Member.findOne({
-      _id: req.user.memberId,
+      _id: targetId,
       samityCode: req.samityCode,
     }).lean();
     if (!member) return res.status(404).json({ message: 'Member not found' });
@@ -48,8 +57,7 @@ router.get(
       dueAdvance,
       recentDeposits,
     });
-  }
-);
+});
 
 router.get(
   '/',
@@ -77,10 +85,6 @@ router.get('/:id', param('id').isMongoId(), async (req, res) => {
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
   const m = await Member.findOne({ _id: req.params.id, samityCode: req.samityCode }).lean();
   if (!m) return res.status(404).json({ message: 'Not found' });
-  if (req.user.role === 'member' && req.user.memberId !== m._id.toString()) {
-    return res.status(403).json({ message: 'Forbidden' });
-  }
-  if (req.user.role === 'member') return res.json({ member: m });
   const totalDeposited = await getMemberApprovedDepositsTotal(m._id, req.samityCode);
   const profitLoss = await getMemberDistributionTotal(m._id, req.samityCode);
   const dueAdvance = await getMemberDueAdvance(m, req.samityCode);
@@ -96,21 +100,10 @@ router.post(
   body('shares').isFloat({ min: 0 }),
   body('joiningFee').optional().isFloat({ min: 0 }),
   body('joiningFeePaid').optional().isBoolean(),
-  body('userLogin').optional().isString(),
-  body('userPassword').optional().isLength({ min: 6 }),
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
-    const {
-      name,
-      phone,
-      address,
-      shares,
-      joiningFee,
-      joiningFeePaid,
-      userLogin,
-      userPassword,
-    } = req.body;
+    const { name, phone, address, shares, joiningFee, joiningFeePaid } = req.body;
     const count = await Member.countDocuments({ samityCode: req.samityCode });
     const memberNumber = `M-${String(count + 1).padStart(5, '0')}`;
     const member = await Member.create({
@@ -132,25 +125,6 @@ router.post(
       updatedBy: req.user.id,
       samityCode: req.samityCode,
     });
-    if (userLogin && userPassword) {
-      const isEmail = userLogin.includes('@');
-      const passwordHash = await bcrypt.hash(userPassword, 10);
-      try {
-        const user = await User.create({
-          [isEmail ? 'email' : 'phone']: isEmail ? userLogin.toLowerCase() : userLogin,
-          passwordHash,
-          role: 'member',
-          memberId: member._id,
-        });
-        await Member.findByIdAndUpdate(member._id, { userId: user._id });
-      } catch (e) {
-        if (e.code === 11000) {
-          await Member.findByIdAndDelete(member._id);
-          return res.status(409).json({ message: 'Login already in use' });
-        }
-        throw e;
-      }
-    }
     await logActivity({
       actorId: req.user.id,
       action: 'create_member',

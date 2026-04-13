@@ -11,8 +11,6 @@ export function Members() {
     shares: 1,
     joiningFee: 0,
     joiningFeePaid: false,
-    userLogin: '',
-    userPassword: '',
   });
 
   const load = async () => {
@@ -39,8 +37,6 @@ export function Members() {
       shares: 1,
       joiningFee: 0,
       joiningFeePaid: false,
-      userLogin: '',
-      userPassword: '',
     });
     await load();
   };
@@ -106,20 +102,6 @@ export function Members() {
             />
             Joining fee paid
           </label>
-          <p className="text-xs text-slate-500 pt-2">Optional login for member app</p>
-          <input
-            className="w-full border rounded-lg px-3 py-2 text-sm"
-            placeholder="Email or phone for login"
-            value={form.userLogin}
-            onChange={(e) => setForm({ ...form, userLogin: e.target.value })}
-          />
-          <input
-            type="password"
-            className="w-full border rounded-lg px-3 py-2 text-sm"
-            placeholder="Password (min 6)"
-            value={form.userPassword}
-            onChange={(e) => setForm({ ...form, userPassword: e.target.value })}
-          />
           <button
             type="submit"
             className="w-full py-2 rounded-lg bg-brand-600 text-white text-sm font-medium"

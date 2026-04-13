@@ -61,12 +61,6 @@ router.get(
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
     const m = await Member.findOne({ _id: req.params.id, samityCode: req.samityCode }).lean();
     if (!m) return res.status(404).json({ message: 'Not found' });
-    if (req.user.role === 'member' && req.user.memberId !== m._id.toString()) {
-      return res.status(403).json({ message: 'Forbidden' });
-    }
-    if (!['admin', 'accountant', 'member'].includes(req.user.role)) {
-      return res.status(403).json({ message: 'Forbidden' });
-    }
     const deposits = await Deposit.find({ memberId: m._id, samityCode: req.samityCode })
       .sort({ createdAt: -1 })
       .lean();
