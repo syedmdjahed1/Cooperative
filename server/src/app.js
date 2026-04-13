@@ -13,6 +13,7 @@ import accountsRoutes from './routes/accounts.js';
 import activityRoutes from './routes/activity.js';
 import { connectDb } from './config/db.js';
 import { env } from './config/env.js';
+import { Member } from './models/Member.js';
 
 export function createApp() {
   const app = express();
@@ -29,6 +30,31 @@ export function createApp() {
   const ping = (req, res) => res.json({ ok: true });
   app.get('/health', ping);
   app.get('/api/health', ping);
+
+  app.get('/api/health/db', async (req, res) => {
+    try {
+      await connectDb();
+      const samity =
+        (req.headers['x-samity-code'] || 'default').toString().trim() || 'default';
+      const memberCount = await Member.countDocuments({ samityCode: samity });
+      const mongodbUriSet = Boolean(process.env.MONGODB_URI || process.env.mongodb_uri);
+      res.json({
+        ok: true,
+        mongodb: 'connected',
+        samityCode: samity,
+        memberCount,
+        mongodbUriSet,
+      });
+    } catch (e) {
+      const mongodbUriSet = Boolean(process.env.MONGODB_URI || process.env.mongodb_uri);
+      res.status(500).json({
+        ok: false,
+        mongodb: 'error',
+        message: e.message,
+        mongodbUriSet,
+      });
+    }
+  });
 
   app.use(async (req, res, next) => {
     try {
