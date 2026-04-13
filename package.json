@@ -5,6 +5,7 @@
     "install:all": "npm install --prefix server && npm install --prefix client",
     "dev:api": "npm run dev --prefix server",
     "dev:web": "npm run dev --prefix client",
-    "seed": "npm run seed --prefix server"
+    "seed": "npm run seed --prefix server",
+    "seed:demo": "npm run seed:demo --prefix server"
   }
 }

@@ -13,8 +13,10 @@ export function Layout() {
     <div className="min-h-screen flex flex-col md:flex-row">
       <aside className="md:w-56 bg-white border-b md:border-b-0 md:border-r border-slate-200 p-4 shrink-0">
         <div className="font-semibold text-brand-700 text-lg mb-1">Samity CMS</div>
-        <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5 mb-3">
-          Demo build — open access, no login
+        <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5 mb-3 leading-snug">
+          Demo — no login. Fill charts: from repo <code className="font-mono text-[10px]">server</code>, run{' '}
+          <code className="font-mono text-[10px]">npm run seed:demo</code> (MongoDB + <code className="font-mono text-[10px]">MONGODB_URI</code>).
+          Reset: <code className="font-mono text-[10px]">SEED_DEMO_FORCE=1 npm run seed:demo</code>.
         </p>
         <label className="block text-xs text-slate-500 mb-1">Samity code</label>
         <input
