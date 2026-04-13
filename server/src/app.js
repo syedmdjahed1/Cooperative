@@ -12,10 +12,17 @@ import settingsRoutes from './routes/settings.js';
 import accountsRoutes from './routes/accounts.js';
 import activityRoutes from './routes/activity.js';
 import { connectDb } from './config/db.js';
+import { env } from './config/env.js';
 
 export function createApp() {
   const app = express();
-  app.use(cors({ origin: process.env.CORS_ORIGIN?.split(',') || true, credentials: true }));
+  const corsOrigin = env('CORS_ORIGIN');
+  app.use(
+    cors({
+      origin: corsOrigin ? corsOrigin.split(',').map((s) => s.trim()) : true,
+      credentials: true,
+    })
+  );
   app.use(morgan('dev'));
   app.use(express.json({ limit: '1mb' }));
 

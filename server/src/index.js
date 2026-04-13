@@ -1,9 +1,10 @@
 import 'dotenv/config';
 import { createApp } from './app.js';
 import { connectDb } from './config/db.js';
+import { env } from './config/env.js';
 import { Account } from './models/Account.js';
 
-const port = Number(process.env.PORT || 4000);
+const port = Number(env('PORT', '4000'));
 
 async function ensureAccounts(samityCode) {
   const keys = [

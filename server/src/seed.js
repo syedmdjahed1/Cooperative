@@ -1,13 +1,14 @@
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import { connectDb } from './config/db.js';
+import { env } from './config/env.js';
 import { User } from './models/User.js';
 import { Settings } from './models/Settings.js';
 import { Account } from './models/Account.js';
 
 async function seed() {
   await connectDb();
-  const samityCode = process.env.SEED_SAMITY || 'default';
+  const samityCode = env('SEED_SAMITY', 'default');
   await Settings.updateOne(
     { samityCode },
     { $setOnInsert: { monthlyInstallment: 1000, currency: 'BDT', shareParValue: 0 } },
@@ -23,8 +24,8 @@ async function seed() {
       { upsert: true }
     );
   }
-  const email = process.env.SEED_ADMIN_EMAIL || 'admin@samity.local';
-  const password = process.env.SEED_ADMIN_PASSWORD || 'admin123';
+  const email = env('SEED_ADMIN_EMAIL', 'admin@samity.local');
+  const password = env('SEED_ADMIN_PASSWORD', 'admin123');
   const existing = await User.findOne({ email });
   if (existing) {
     console.log('Admin already exists');

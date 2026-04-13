@@ -11,9 +11,10 @@ import { Settings } from './models/Settings.js';
 import { Account } from './models/Account.js';
 import { ActivityLog } from './models/ActivityLog.js';
 import { DEMO_ACTOR_ID } from './middleware/auth.js';
+import { env } from './config/env.js';
 
 const actorId = new mongoose.Types.ObjectId(DEMO_ACTOR_ID);
-const samityCode = process.env.SEED_SAMITY || 'default';
+const samityCode = env('SEED_SAMITY', 'default');
 
 async function wipeSamityData() {
   await Promise.all([
@@ -80,7 +81,7 @@ async function seedDemo() {
   );
 
   const existing = await Member.countDocuments({ samityCode });
-  const force = process.env.SEED_DEMO_FORCE === '1';
+  const force = env('SEED_DEMO_FORCE') === '1';
   if (existing > 0 && !force) {
     console.log(
       'Sample data already exists for this samity. Run with SEED_DEMO_FORCE=1 to replace it.'
